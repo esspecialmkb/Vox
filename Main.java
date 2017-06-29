@@ -28,10 +28,10 @@ import java.util.Iterator;
 public class Main extends SimpleApplication {
     //OLD MEMBERS
     Vector3f blocPos;
-    ArrayList<Vector3f> positions;
-    ArrayList<Vector2f> tCoords;
-    ArrayList<Short> indexList;
-    ArrayList<Float> normals;
+    //ArrayList<Vector3f> positions;
+    //ArrayList<Vector2f> tCoords;
+    //ArrayList<Short> indexList;
+    //ArrayList<Float> normals;
     short offset;
     
     Mesh blockMesh;
@@ -85,14 +85,18 @@ public class Main extends SimpleApplication {
             offset = 0;
         }
         
+        public void updateIndex(){
+            offset = (short)positions.size();
+        }
+        
         public void addVertex(Vector3f pos){
             positions.add(pos);
         }
         public void addTriangle(short a, short b, short c){
-            indexList.add((short)(a + offset));
-            indexList.add((short)(b + offset));
-            indexList.add((short)(c + offset));
-            offset = (short) positions.size();
+            indexList.add((short)(a));
+            indexList.add((short)(b));
+            indexList.add((short)(c));
+            //offset = (short) positions.size();
         }
         public void addNormal(float nx, float ny, float nz){
             normals.add(nx);
@@ -152,47 +156,49 @@ public class Main extends SimpleApplication {
             Back
         }
         
-        public void buildBlockFaces(Chunk chunk, Vector3f blockPos);
-        public void genTopFace(VoxMesh chunk, Vector3f blocPos);
-        public void genBottomFace(VoxMesh chunk, Vector3f blocPos);
-        public void genFrontFace(VoxMesh chunk, Vector3f blocPos);
-        public void genBackFace(VoxMesh chunk, Vector3f blocPos);
-        public void genRightFace(VoxMesh chunk, Vector3f blocPos);
-        public void genLeftFace(VoxMesh chunk, Vector3f blocPos);
+        public VoxMesh buildBlockFaces(Chunk chunk, Vector3f blockPos);
+        public VoxMesh genTopFace(VoxMesh chunk, Vector3f blocPos);
+        public VoxMesh genBottomFace(VoxMesh chunk, Vector3f blocPos);
+        public VoxMesh genFrontFace(VoxMesh chunk, Vector3f blocPos);
+        public VoxMesh genBackFace(VoxMesh chunk, Vector3f blocPos);
+        public VoxMesh genRightFace(VoxMesh chunk, Vector3f blocPos);
+        public VoxMesh genLeftFace(VoxMesh chunk, Vector3f blocPos);
         public boolean isSolid(Direction direction);
     }
     
     public class BasicBlock implements AbstractBlock{
         
         @Override
-        public void buildBlockFaces(Chunk chunk, Vector3f blockPos){
+        public VoxMesh buildBlockFaces(Chunk chunk, Vector3f blockPos){
             //NEW LINES
-            if( chunk.getBlock(blockPos.add(0,1,0)).isSolid(Direction.Down) == true ){ //-> TOP
+            if( chunk.getBlock(blockPos.add(0,1,0)).isSolid(Direction.Down) == false ){ //-> TOP
                 genTopFace(chunk.chunkMesh, blockPos);
             }
             
-            if( chunk.getBlock(blockPos.add(0,-1,0)).isSolid(Direction.Up) == true ){ //-> BOTTOM
+            if( chunk.getBlock(blockPos.add(0,-1,0)).isSolid(Direction.Up) == false ){ //-> BOTTOM
                 genBottomFace(chunk.chunkMesh, blockPos);
             }
 
-            if( chunk.getBlock(blockPos.add(1,0,0)).isSolid(Direction.Right) == true ){ //-> LEFT
+            if( chunk.getBlock(blockPos.add(1,0,0)).isSolid(Direction.Right) == false ){ //-> LEFT
                 genLeftFace(chunk.chunkMesh, blockPos);
             }
 
-            if( chunk.getBlock(blockPos.add(-1,0,0)).isSolid(Direction.Left) == true ){ //-> RIGHT
+            if( chunk.getBlock(blockPos.add(-1,0,0)).isSolid(Direction.Left) == false ){ //-> RIGHT
                 genRightFace(chunk.chunkMesh, blockPos);
             }
 
-            if( chunk.getBlock(blockPos.add(0,0,1)).isSolid(Direction.Back) == true ){ // -> FRONT
+            if( chunk.getBlock(blockPos.add(0,0,1)).isSolid(Direction.Back) == false ){ // -> FRONT
                 genFrontFace(chunk.chunkMesh, blockPos);
             }
 
-            if( chunk.getBlock(blockPos.add(0,0,-1)).isSolid(Direction.Front) == true ){ //-> BACK
+            if( chunk.getBlock(blockPos.add(0,0,-1)).isSolid(Direction.Front) == false ){ //-> BACK
                 genBackFace(chunk.chunkMesh, blockPos);
             }
+            
+            return chunk.chunkMesh;
         }
         @Override
-        public void genTopFace(VoxMesh chunk, Vector3f blocPos){
+        public VoxMesh genTopFace(VoxMesh chunk, Vector3f blocPos){
             chunk.addVertex(blocPos.add(0,1,1));
             chunk.addVertex(blocPos.add(1,1,1));
             chunk.addVertex(blocPos.add(0,1,0));
@@ -202,9 +208,10 @@ public class Main extends SimpleApplication {
             chunk.addTriangle((short)(1 + chunk.offset), (short)(3 + chunk.offset), (short)(2 + chunk.offset));
             
             //  Add the number of verts we added to offset
-            chunk.offset = (short) (chunk.positions.size());
+            chunk.updateIndex();
 
             //  Vertex Normals
+            chunk.addNormal(0f, 1f, 0f);
             chunk.addNormal(0f, 1f, 0f);
 
             //  Texture Co-ordinates
@@ -212,9 +219,11 @@ public class Main extends SimpleApplication {
             chunk.tCoords.add(new Vector2f(1,1));
             chunk.tCoords.add(new Vector2f(1,0));
             chunk.tCoords.add(new Vector2f(0,0));
+            
+            return chunk;
         };
         @Override
-        public void genBottomFace(VoxMesh chunk, Vector3f blocPos){
+        public VoxMesh genBottomFace(VoxMesh chunk, Vector3f blocPos){
             //  Vertex positions of the face
             chunk.addVertex(blocPos.add(0,0,1));
             chunk.addVertex(blocPos.add(1,0,1));
@@ -226,7 +235,7 @@ public class Main extends SimpleApplication {
             chunk.addTriangle((short)(2 + chunk.offset), (short)(3 + chunk.offset), (short)(1 + chunk.offset));
 
             //  Add the number of verts we added to offset
-            chunk.offset = (short) (chunk.positions.size());
+            chunk.updateIndex();
 
             //  Vertex Normals
             chunk.addNormal(0f, -1f, 0f);
@@ -236,9 +245,11 @@ public class Main extends SimpleApplication {
             chunk.tCoords.add(new Vector2f(1,1));
             chunk.tCoords.add(new Vector2f(1,0));
             chunk.tCoords.add(new Vector2f(0,0));
+            
+            return chunk;
         };
         @Override
-        public void genFrontFace(VoxMesh chunk, Vector3f blocPos){
+        public VoxMesh genFrontFace(VoxMesh chunk, Vector3f blocPos){
             //  Vertex positions of the face
             chunk.addVertex(blocPos.add(0,1,1));
             chunk.addVertex(blocPos.add(1,1,1));
@@ -250,7 +261,7 @@ public class Main extends SimpleApplication {
             chunk.addTriangle((short)(2 + chunk.offset), (short)(3 + chunk.offset), (short)(1 + chunk.offset));
 
             //  Add the number of verts we added to offset
-            chunk.offset = (short) (chunk.positions.size());
+            chunk.updateIndex();
 
             //  Vertex Normals
             chunk.addNormal(0f, 0f, 1f);
@@ -260,9 +271,11 @@ public class Main extends SimpleApplication {
             chunk.tCoords.add(new Vector2f(1,1));
             chunk.tCoords.add(new Vector2f(1,0));
             chunk.tCoords.add(new Vector2f(0,0));
+            
+            return chunk;
         };
         @Override
-        public void genBackFace(VoxMesh chunk, Vector3f blocPos){
+        public VoxMesh genBackFace(VoxMesh chunk, Vector3f blocPos){
             //  Vertex positions of the face
             chunk.addVertex(blocPos.add(0,1,0));
             chunk.addVertex(blocPos.add(1,1,0));
@@ -274,7 +287,7 @@ public class Main extends SimpleApplication {
             chunk.addTriangle((short)(1 + chunk.offset), (short)(3 + chunk.offset), (short)(2 + chunk.offset));
 
             //  Add the number of verts we added to offset
-            chunk.offset = (short) (chunk.positions.size());
+            chunk.updateIndex();
 
             //  Vertex Normals
             chunk.addNormal(0f, 0f, -1f);
@@ -284,9 +297,11 @@ public class Main extends SimpleApplication {
             chunk.tCoords.add(new Vector2f(1,1));
             chunk.tCoords.add(new Vector2f(1,0));
             chunk.tCoords.add(new Vector2f(0,0));
+            
+            return chunk;
         };
         @Override
-        public void genRightFace(VoxMesh chunk, Vector3f blocPos){
+        public VoxMesh genRightFace(VoxMesh chunk, Vector3f blocPos){
             //  Vertex positions of the face
             chunk.addVertex(blocPos.add(0,1,1));
             chunk.addVertex(blocPos.add(0,1,0));
@@ -298,7 +313,7 @@ public class Main extends SimpleApplication {
             chunk.addTriangle((short)(1 + chunk.offset), (short)(3 + chunk.offset), (short)(2 + chunk.offset));
 
             //  Add the number of verts we added to offset
-            chunk.offset = (short) (chunk.positions.size());
+            chunk.updateIndex();
 
             //  Vertex Normals
             chunk.addNormal(-1f, 0f, 0f);
@@ -308,9 +323,11 @@ public class Main extends SimpleApplication {
             chunk.tCoords.add(new Vector2f(1,1));
             chunk.tCoords.add(new Vector2f(1,0));
             chunk.tCoords.add(new Vector2f(0,0));
+            
+            return chunk;
         };
         @Override
-        public void genLeftFace(VoxMesh chunk, Vector3f blocPos){
+        public VoxMesh genLeftFace(VoxMesh chunk, Vector3f blocPos){
             //  Vertex positions of the face
             chunk.addVertex(blocPos.add(1,1,1));
             chunk.addVertex(blocPos.add(1,1,0));
@@ -322,7 +339,7 @@ public class Main extends SimpleApplication {
             chunk.addTriangle((short)(2 + chunk.offset), (short)(3 + chunk.offset), (short)(1 + chunk.offset));
 
             //  Add the number of verts we added to offset
-            chunk.offset = (short) (chunk.positions.size());
+            chunk.updateIndex();
 
             //  Vertex Normals
             chunk.addNormal(1f, 0f, 0f);
@@ -332,6 +349,8 @@ public class Main extends SimpleApplication {
             chunk.tCoords.add(new Vector2f(1,1));
             chunk.tCoords.add(new Vector2f(1,0));
             chunk.tCoords.add(new Vector2f(0,0));
+            
+            return chunk;
         };
 
         public boolean isSolid(Direction direction) {
@@ -355,19 +374,26 @@ public class Main extends SimpleApplication {
     
     public class AirBlock implements AbstractBlock{
 
-        public void buildBlockFaces(Chunk chunk, Vector3f blockPos) {
+        public VoxMesh buildBlockFaces(Chunk chunk, Vector3f blockPos) {
+            return chunk.chunkMesh;
         }
-        public void genTopFace(VoxMesh chunk, Vector3f blocPos) {
+        public VoxMesh genTopFace(VoxMesh chunk, Vector3f blocPos) {
+            return chunk;
         }
-        public void genBottomFace(VoxMesh chunk, Vector3f blocPos) {
+        public VoxMesh genBottomFace(VoxMesh chunk, Vector3f blocPos) {
+            return chunk;
         }
-        public void genFrontFace(VoxMesh chunk, Vector3f blocPos) {
+        public VoxMesh genFrontFace(VoxMesh chunk, Vector3f blocPos) {
+            return chunk;
         }
-        public void genBackFace(VoxMesh chunk, Vector3f blocPos) {
+        public VoxMesh genBackFace(VoxMesh chunk, Vector3f blocPos) {
+            return chunk;
         }
-        public void genRightFace(VoxMesh chunk, Vector3f blocPos) {
+        public VoxMesh genRightFace(VoxMesh chunk, Vector3f blocPos) {
+            return chunk;
         }
-        public void genLeftFace(VoxMesh chunk, Vector3f blocPos) {
+        public VoxMesh genLeftFace(VoxMesh chunk, Vector3f blocPos) {
+            return chunk;
         }
         public boolean isSolid(Direction direction) {
             return false;
@@ -382,6 +408,13 @@ public class Main extends SimpleApplication {
         Node node;
         Mesh blockMesh;
         VoxMesh chunkMesh;
+        
+        ArrayList<Vector3f> positions;
+        ArrayList<Vector2f> tCoords;
+        ArrayList<Short> indexList;
+        ArrayList<Float> normals;
+        short offset;
+        
         int chunkSize = 4;
         //ADD FLAG FOR CHUNK MESH UPDATES
         boolean meshUpdate;
@@ -406,7 +439,7 @@ public class Main extends SimpleApplication {
             for(int x = 0; x< chunkSize; x++){
                 for(int y = 0; y< chunkSize; y++){
                     for(int z = 0; z< chunkSize; z++){
-                        blocks[x][y][z].buildBlockFaces(this, new Vector3f(x, y, z));
+                        chunkMesh = blocks[x][y][z].buildBlockFaces(this, new Vector3f(x, y, z));
                     }
                 }
             }
@@ -430,22 +463,23 @@ public class Main extends SimpleApplication {
             for(int x=0;x<chunkSize;x++){
                 for(int y=0;y<chunkSize;y++){
                     for(int z=0;z<chunkSize;z++){
-                        //if(y == 0){
-                            //blocks[x][y][z] = new BasicBlock();
-                        //}else{
+                        if(y == 0){
+                            blocks[x][y][z] = new BasicBlock();
+                        }else{
                             blocks[x][y][z] = new AirBlock();
-                        //}
+                        }
                         
                     }
                 }
             }
             
-            blocks[0][0][0] = new BasicBlock();
+            //blocks[0][0][0] = new BasicBlock();
             
             mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
             mat.setColor("Color", ColorRGBA.Blue);
             
             chunkMesh = new VoxMesh();
+            //chunkMesh.initMesh();
             node = new Node();
             node.addControl(this);
             meshUpdate = true;
@@ -497,6 +531,21 @@ public class Main extends SimpleApplication {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
         
+        public void addVertex(Vector3f pos){
+            positions.add(pos);
+        }
+        public void addTriangle(short a, short b, short c){
+            indexList.add((short)(a + offset));
+            indexList.add((short)(b + offset));
+            indexList.add((short)(c + offset));
+            offset = (short) positions.size();
+        }
+        public void addNormal(float nx, float ny, float nz){
+            normals.add(nx);
+            normals.add(ny);
+            normals.add(nz);
+        }
+        
         //REFACTOR buildBlockMesh()
         public Mesh buildChunkMesh() {
             Mesh mesh = new Mesh();
@@ -543,7 +592,7 @@ public class Main extends SimpleApplication {
     }
     
     
-    
+    /*
     public Mesh buildBlockMesh() {
         Mesh mesh = new Mesh();
         
@@ -580,7 +629,7 @@ public class Main extends SimpleApplication {
         
         //System.out.println(mesh.getTriangleCount() + " Tris, " + mesh.getVertexCount() + " Verts");
         return mesh;
-    }
+    } */
 
     @Override
     public void simpleInitApp() {
@@ -601,6 +650,7 @@ public class Main extends SimpleApplication {
         //TODO: add render code
     }
     
+    /*
     public void oldInitApp(){
         Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         mat.setColor("Color", ColorRGBA.Blue);
@@ -839,5 +889,5 @@ public class Main extends SimpleApplication {
         tCoords.add(new Vector2f(0,0));
         
         //System.out.println("Left Face: Index Count = " + offset);
-    }
+    } */
 }
