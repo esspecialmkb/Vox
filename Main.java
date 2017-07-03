@@ -482,6 +482,7 @@ public class Main extends SimpleApplication {
             //chunkMesh.initMesh();
             node = new Node();
             node.addControl(this);
+            node.setLocalTranslation(speed, speed, speed);
             meshUpdate = true;
             chunkStatus = 0;
         }
