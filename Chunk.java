@@ -82,6 +82,7 @@ public class Chunk implements Control{
         }
     }
     
+    // The initChunkPosition method allows us to define the chunk's location
     public void initChunkPosition(int x, int y, int z, AssetManager assetManager){
         chunkX = x * chunkSize;
         chunkY = y * chunkSize;
@@ -140,6 +141,16 @@ public class Chunk implements Control{
         return false;
     }
     
+    // The convertLocalPos method will take global coordinates and convert them
+    //into local coordinates
+    public Vector3f convertLocalPos(float x, float y, float z){
+        Vector3f result = new Vector3f(x % this.chunkSize, y % this.chunkSize, z % this.chunkSize);
+        return result;
+    }
+    
+    // The inChunkRange method tests to see if the position that we are checking is 
+    //actually within this chunk
+    // If the position is not in this chunk, then we will need to access all of the chunks
     public boolean inChunkRange(float x, float y, float z){
         if(((Math.floor(x / chunkSize)) == chunkX)){
             if(((Math.floor(y / chunkSize)) == chunkY)){
